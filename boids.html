@@ -1,32 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boids Simulation</title>
     <style>
-      canvas {
-        display: block;
-        margin: 0 auto;
-        background: #000;
-      }
-      #timeStepControl {
-        display: block;
-        margin: 10px auto;
-        width: 50%;
-      }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: #000;
+        }
+        #controls {
+            display: flex;
+            justify-content: center;
+            margin: 10px auto;
+            gap: 10px;
+        }
+        input[type=range] {
+            width: 150px;
+        }
     </style>
-  </head>
-  <body>
-    <input
-      id="timeStepControl"
-      type="range"
-      min="0"
-      max="5"
-      step="0.1"
-      value="0.1"
-    />
+</head>
+<body>
+    <div id="controls">
+        <label>
+            Time Step
+            <input id="timeStepControl" type="range" min="0" max="5" step="0.1" value="0.1">
+        </label>
+        <label>
+            Cohesion
+            <input id="cohesionControl" type="range" min="0" max="5" step="0.1" value="1">
+        </label>
+        <label>
+            Separation
+            <input id="separationControl" type="range" min="0" max="5" step="0.1" value="2.5">
+        </label>
+    </div>
     <canvas id="boidsCanvas"></canvas>
     <script src="boids.js"></script>
-  </body>
+</body>
 </html>

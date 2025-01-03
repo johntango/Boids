@@ -1,22 +1,32 @@
-
 const canvas = document.getElementById("boidsCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const NUM_BOIDS = 100;
-const BOID_RADIUS = 10;
+const NUM_BOIDS = 1000;
+const BOID_RADIUS = 5;
 const PERCEPTION_RADIUS = 50;
 const MAX_SPEED = 2;
-const ALIGNMENT_FACTOR = 1.5;
-const COHESION_FACTOR = 1;
-const SEPARATION_FACTOR = 2.5; // Increased separation factor
+let ALIGNMENT_FACTOR = 1.5;
+let COHESION_FACTOR = 1;
+let SEPARATION_FACTOR = 2.5;
 let TIME_STEP = 0.1; // Time step for simulation
 
-// Add an event listener to update TIME_STEP based on the slider
+// Add event listeners to update simulation parameters based on UI sliders
 const timeStepControl = document.getElementById("timeStepControl");
+const cohesionControl = document.getElementById("cohesionControl");
+const separationControl = document.getElementById("separationControl");
+
 timeStepControl.addEventListener("input", (event) => {
     TIME_STEP = parseFloat(event.target.value);
+});
+
+cohesionControl.addEventListener("input", (event) => {
+    COHESION_FACTOR = parseFloat(event.target.value);
+});
+
+separationControl.addEventListener("input", (event) => {
+    SEPARATION_FACTOR = parseFloat(event.target.value);
 });
 
 class Boid {
@@ -67,6 +77,8 @@ class Boid {
         ctx.arc(this.position.x, this.position.y, BOID_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = "white";
         ctx.fill();
+        ctx.strokeStyle = "green"; // Green outline for boids
+        ctx.stroke();
         ctx.closePath();
     }
 }
