@@ -1,18 +1,23 @@
 
-// JavaScript Code (boids.js)
-
 const canvas = document.getElementById("boidsCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const NUM_BOIDS = 100;
-const BOID_RADIUS = 5;
+const BOID_RADIUS = 10;
 const PERCEPTION_RADIUS = 50;
 const MAX_SPEED = 2;
 const ALIGNMENT_FACTOR = 1.5;
 const COHESION_FACTOR = 1;
-const SEPARATION_FACTOR = 1.5;
+const SEPARATION_FACTOR = 2.5; // Increased separation factor
+let TIME_STEP = 0.1; // Time step for simulation
+
+// Add an event listener to update TIME_STEP based on the slider
+const timeStepControl = document.getElementById("timeStepControl");
+timeStepControl.addEventListener("input", (event) => {
+    TIME_STEP = parseFloat(event.target.value);
+});
 
 class Boid {
     constructor(x, y) {
@@ -25,8 +30,8 @@ class Boid {
     }
 
     update() {
-        this.velocity.x += this.acceleration.x;
-        this.velocity.y += this.acceleration.y;
+        this.velocity.x += this.acceleration.x * TIME_STEP;
+        this.velocity.y += this.acceleration.y * TIME_STEP;
 
         const speed = Math.sqrt(
             this.velocity.x ** 2 + this.velocity.y ** 2
@@ -36,8 +41,8 @@ class Boid {
             this.velocity.y = (this.velocity.y / speed) * MAX_SPEED;
         }
 
-        this.position.x += this.velocity.x;
-        this.position.y += this.velocity.y;
+        this.position.x += this.velocity.x * TIME_STEP;
+        this.position.y += this.velocity.y * TIME_STEP;
 
         this.acceleration.x = 0;
         this.acceleration.y = 0;
