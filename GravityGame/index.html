@@ -1,179 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Gravity Jumper</title>
-  <style>
-    canvas {
-      background: #111;
-      display: block;
-      margin: 0 auto;
-      border: 2px solid white;
-    }
-    body {
-      color: white;
-      text-align: center;
-      font-family: sans-serif;
-    }
-  </style>
-</head>
-<body>
-  <h1>Gravity Jumper</h1>
-  <p>Use Arrow Keys to Move, Spacebar to Jump</p>
-  <p>Level: <span id="level">1</span> | Score: <span id="score">0</span></p>
-  <canvas id="gameCanvas" width="600" height="400"></canvas>
-  <p><button onclick="restartGame()">Restart</button></p>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gravity Jumper</title>
+    <style>
+      canvas {
+        background: #111;
+        display: block;
+        margin: 0 auto;
+        border: 2px solid white;
+      }
+      body {
+        color: white;
+        text-align: center;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Gravity Jumper</h1>
+    <p>Press <strong>A</strong> to toggle LLM Agent Mode</p>
+    <p>Level: <span id="level">1</span> | Score: <span id="score">0</span></p>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <p><button onclick="restartGame()">Restart</button></p>
 
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
 
-    let gravityLevels = [0.3, 0.6, 1.0, 1.5, 2.0];
-    let currentLevel = 0;
-    let gravity = gravityLevels[currentLevel];
+      let gravityLevels = [0.3, 0.6, 1.0, 1.5, 2.0];
+      let currentLevel = 0;
+      let gravity = gravityLevels[currentLevel];
 
-    let score = 0;
-    const platformHeight = 10;
+      let score = 0;
+      const platformHeight = 10;
 
-    let player = {
-      x: 50,
-      y: 300,
-      width: 20,
-      height: 20,
-      color: 'lime',
-      velX: 0,
-      velY: 0,
-      jumping: false
-    };
+      let player = {
+        x: 50,
+        y: 300,
+        width: 20,
+        height: 20,
+        color: "lime",
+        velX: 0,
+        velY: 0,
+        jumping: false,
+      };
 
-    let keys = {};
-    let platforms = [];
-    let agentMode = false; // AI agent mode toggle
+      let keys = {};
+      let platforms = [];
+      let agentMode = false; // Toggle for LLM agent mode
 
-    function createPlatforms() {
-      platforms = [
-        { x: 0, y: 380, width: 600 },
-        { x: 100, y: 300, width: 100 },
-        { x: 250, y: 250, width: 100 },
-        { x: 400, y: 200, width: 100 },
-        { x: 550, y: 150, width: 100 }
-      ];
-    }
+      function createPlatforms() {
+        platforms = [
+          { x: 0, y: 380, width: 600 },
+          { x: 100, y: 300, width: 100 },
+          { x: 250, y: 250, width: 100 },
+          { x: 400, y: 200, width: 100 },
+          { x: 550, y: 150, width: 100 },
+        ];
+      }
 
-    function updateLevel() {
-      currentLevel = Math.min(currentLevel + 1, gravityLevels.length - 1);
-      gravity = gravityLevels[currentLevel];
-      document.getElementById('level').textContent = currentLevel + 1;
-    }
+      function updateLevel() {
+        currentLevel = Math.min(currentLevel + 1, gravityLevels.length - 1);
+        gravity = gravityLevels[currentLevel];
+        document.getElementById("level").textContent = currentLevel + 1;
+      }
 
-    function restartGame() {
-      player.x = 50;
-      player.y = 300;
-      player.velX = 0;
-      player.velY = 0;
-      score = 0;
-      currentLevel = 0;
-      gravity = gravityLevels[currentLevel];
-      document.getElementById('level').textContent = 1;
-      document.getElementById('score').textContent = 0;
-    }
+      function restartGame() {
+        player.x = 50;
+        player.y = 300;
+        player.velX = 0;
+        player.velY = 0;
+        score = 0;
+        currentLevel = 0;
+        gravity = gravityLevels[currentLevel];
+        document.getElementById("level").textContent = 1;
+        document.getElementById("score").textContent = 0;
+      }
 
-    function gameLoop() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      function getGameState() {
+        return {
+          player: {
+            x: player.x,
+            y: player.y,
+            velX: player.velX,
+            velY: player.velY,
+            jumping: player.jumping,
+          },
+          gravity: gravity,
+          platforms: platforms,
+          level: currentLevel,
+        };
+      }
 
-      // AI Agent input (simple heuristic)
-      if (agentMode) {
-        if (!player.jumping && isPlatformAhead()) {
+      function llmAgentDecision(state) {
+        // Placeholder LLM logic: replace this with API call to actual model
+        let p = state.player;
+        if (!p.jumping && p.x < 500 && state.level < 4) {
+          return "jump";
+        } else if (p.x < 580) {
+          return "moveRight";
+        } else {
+          return "noop";
+        }
+      }
+
+      function applyAction(action) {
+        if (action === "moveRight") player.velX = 3;
+        if (action === "moveLeft") player.velX = -3;
+        if (action === "jump" && !player.jumping) {
           player.jumping = true;
           player.velY = -10;
         }
-        if (player.x < 500) {
-          player.velX = 3;
-        }
       }
 
-      // Gravity
-      player.velY += gravity;
-      player.y += player.velY;
-      player.x += player.velX;
+      function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Friction
-      player.velX *= 0.9;
+        if (agentMode) {
+          const state = getGameState();
+          llmAgentDecision(state).then((action) => applyAction(action));
+        } else {
+          if (keys["ArrowLeft"]) player.velX = -3;
+          if (keys["ArrowRight"]) player.velX = 3;
+        }
 
-      // Platform Collision
-      let onGround = false;
-      for (let p of platforms) {
-        if (player.x < p.x + p.width &&
+        // Gravity
+        player.velY += gravity;
+        player.y += player.velY;
+        player.x += player.velX;
+        player.velX *= 0.9;
+
+        // Platform Collision
+        let onGround = false;
+        for (let p of platforms) {
+          if (
+            player.x < p.x + p.width &&
             player.x + player.width > p.x &&
             player.y + player.height > p.y &&
-            player.y + player.height < p.y + platformHeight + player.velY) {
-          player.y = p.y - player.height;
-          player.velY = 0;
-          player.jumping = false;
-          onGround = true;
+            player.y + player.height < p.y + platformHeight + player.velY
+          ) {
+            player.y = p.y - player.height;
+            player.velY = 0;
+            player.jumping = false;
+            onGround = true;
+          }
+          ctx.fillStyle = "white";
+          ctx.fillRect(p.x, p.y, p.width, platformHeight);
         }
-        // Draw platform
-        ctx.fillStyle = 'white';
-        ctx.fillRect(p.x, p.y, p.width, platformHeight);
+
+        // Check bounds
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.width > canvas.width)
+          player.x = canvas.width - player.width;
+
+        if (player.y > canvas.height) restartGame();
+
+        if (player.x > 550 && currentLevel < gravityLevels.length - 1) {
+          updateLevel();
+          player.x = 50;
+          player.y = 300;
+          score += 10;
+          document.getElementById("score").textContent = score;
+        }
+
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+
+        requestAnimationFrame(gameLoop);
       }
 
-      // Manual Move Left/Right
-      if (!agentMode) {
-        if (keys["ArrowLeft"]) player.velX = -3;
-        if (keys["ArrowRight"]) player.velX = 3;
-      }
+      document.addEventListener("keydown", (e) => {
+        keys[e.key] = true;
+        if (e.key === " " && !player.jumping && !agentMode) {
+          player.jumping = true;
+          player.velY = -10;
+        }
+        if (e.key === "a") agentMode = !agentMode;
+      });
 
-      // Check boundaries
-      if (player.x < 0) player.x = 0;
-      if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-
-      // Fall off screen
-      if (player.y > canvas.height) {
-        restartGame();
-      }
-
-      // Reached end platform
-      if (player.x > 550 && currentLevel < gravityLevels.length - 1) {
-        updateLevel();
-        player.x = 50;
-        player.y = 300;
-        score += 10;
-        document.getElementById('score').textContent = score;
-      }
-
-      // Draw player
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    function isPlatformAhead() {
-      for (let p of platforms) {
-        if (p.x > player.x && p.x < player.x + 80 && p.y > player.y) {
-          return true;
+      document.addEventListener("keyup", (e) => {
+        keys[e.key] = false;
+      });
+      async function llmAgentDecision(state) {
+        try {
+          const response = await fetch("http://localhost:3000/decide", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(state),
+          });
+          const data = await response.json();
+          return data.action || "noop";
+        } catch (err) {
+          console.error("LLM API Error:", err);
+          return "noop";
         }
       }
-      return false;
-    }
 
-    document.addEventListener('keydown', e => {
-      keys[e.key] = true;
-      if (e.key === " " && !player.jumping && !agentMode) {
-        player.jumping = true;
-        player.velY = -10;
-      }
-      if (e.key === "a") {
-        agentMode = !agentMode; // toggle AI agent
-      }
-    });
-
-    document.addEventListener('keyup', e => {
-      keys[e.key] = false;
-    });
-
-    createPlatforms();
-    gameLoop();
-  </script>
-</body>
+      createPlatforms();
+      gameLoop();
+    </script>
+  </body>
 </html>
