@@ -27,7 +27,7 @@ app.post('/decide', async (req, res) => {
 
   const prompt = `
 You are controlling a platform jumping game. 
-Based on the following JSON state, return ONLY one of: "moveLeft", "moveRight", "jump", or "noop".
+Based on the following JSON state, return ONLY one of: "moveLeft", "moveRight", "jump","jumpLeft", "jumpRight" or "noop".
 
 State:
 ${JSON.stringify(state, null, 2)}

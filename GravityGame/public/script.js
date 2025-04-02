@@ -24,28 +24,7 @@ let agentMode = false;
 let waitingForLLMDecision = true;
 let awaitingLLMResponse = false;
 
-if (agentMode) {
-    if (!player.jumping && waitingForLLMDecision && !awaitingLLMResponse) {
-        awaitingLLMResponse = true;
-        try {
-            const state = await getGameState();
-            state.platforms = platforms.map((p) => ({
-                x: p.x,
-                y: p.y,
-                width: p.width,
-            }));
-            const action = await llmAgentDecision(state);
-            applyAction(action);
-        } catch (err) {
-            console.error("Agent decision error:", err);
-        } finally {
-            awaitingLLMResponse = false;
-        }
-    }
-} else {
-    if (keys["ArrowLeft"]) player.velX = -3;
-    if (keys["ArrowRight"]) player.velX = 3;
-}
+
 
 function createPlatforms() {
     platforms = [
@@ -86,20 +65,50 @@ async function getGameState() {
 }
 
 function applyAction(action) {
-    if (action === "moveRight") player.velX = 3;
-    if (action === "moveLeft") player.velX = -3;
-    if (action === "jump" && !player.jumping) {
-        player.jumping = true;
-        player.velY = -10;
-        waitingForLLMDecision = false; // Don't ask again until player lands
+    switch (action) {
+      case "moveRight":
+        player.velX = 3;
+        break;
+      case "moveLeft":
+        player.velX = -3;
+        break;
+      case "jump":
+        if (!player.jumping) {
+          player.jumping = true;
+          player.velY = -10;
+          waitingForLLMDecision = false;
+        }
+        break;
+      case "jumpRight":
+        if (!player.jumping) {
+          player.jumping = true;
+          player.velY = -10;
+          player.velX = 3;
+          waitingForLLMDecision = false;
+        }
+        break;
+      case "jumpLeft":
+        if (!player.jumping) {
+          player.jumping = true;
+          player.velY = -10;
+          player.velX = -3;
+          waitingForLLMDecision = false;
+        }
+        break;
+      case "noop":
+        player.velX = 0;
+        break;
+      case "restart":
+        restartGame();
+        break;
+      default:
+        console.warn("Unknown action:", action);
     }
-    if (action === "noop") player.velX = 0;
-    if (action === "restart") restartGame();
-}
+  }
 
 async function llmAgentDecision(state) {
     try {
-        const response = await fetch("https://cuddly-palm-tree-wg76rgrxgpxfj7g-3000.app.github.dev/decide", {
+        const response = await fetch("https://reimagined-guide-jq56jqj9jq5hpx94-3000.app.github.dev/decide", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(state),
@@ -113,93 +122,84 @@ async function llmAgentDecision(state) {
 }
 
 function physicsAndRender() {
-    // Physics
     player.velY += gravity;
     player.y += player.velY;
     player.x += player.velX;
     player.velX *= 0.9;
 
-    if (
+    for (let p of platforms) {
+      if (
         player.x < p.x + p.width &&
         player.x + player.width > p.x &&
         player.y + player.height > p.y &&
         player.y + player.height < p.y + platformHeight + player.velY
-    ) {
+      ) {
         player.y = p.y - player.height;
         player.velY = 0;
         if (player.jumping) {
-            player.jumping = false;
-            waitingForLLMDecision = true; // ready for next decision
+          player.jumping = false;
+          waitingForLLMDecision = true;
         }
+      }
     }
 
-    // Collision detection
-    for (let p of platforms) {
-        if (
-            player.x < p.x + p.width &&
-            player.x + player.width > p.x &&
-            player.y + player.height > p.y &&
-            player.y + player.height < p.y + platformHeight + player.velY
-        ) {
-            player.y = p.y - player.height;
-            player.velY = 0;
-            player.jumping = false;
-        }
-    }
-
-    // Level bounds
     if (player.x < 0) player.x = 0;
     if (player.x + player.width > canvas.width)
-        player.x = canvas.width - player.width;
+      player.x = canvas.width - player.width;
     if (player.y > canvas.height) restartGame();
 
     if (player.x > 550 && currentLevel < gravityLevels.length - 1) {
-        updateLevel();
-        player.x = 50;
-        player.y = 300;
-        score += 10;
-        document.getElementById("score").textContent = score;
+      updateLevel();
+      player.x = 50;
+      player.y = 300;
+      score += 10;
+      document.getElementById("score").textContent = score;
+      waitingForLLMDecision = true;
     }
 
-    // Clear and draw
+    // Render
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Platforms
     ctx.fillStyle = "white";
     for (let p of platforms) {
-        ctx.fillRect(p.x, p.y, p.width, platformHeight);
+      ctx.fillRect(p.x, p.y, p.width, platformHeight);
     }
 
     // Player
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
 
-    // UI
+    // HUD
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
     ctx.fillText("Score: " + score, 10, 20);
     ctx.fillText("Level: " + (currentLevel + 1), 10, 50);
     ctx.fillText("Gravity: " + gravity, 10, 80);
     ctx.fillText("Agent Mode: " + (agentMode ? "ON" : "OFF"), 10, 110);
-
-    ctx.fillText("LLM Waiting: " + (waitingForLLMDecision ? "Yes" : "No"), 10, 140);
-    ctx.fillText("LLM Request: " + (awaitingLLMResponse ? "In Progress" : "Idle"), 10, 160);
-}
+    ctx.fillText("LLM Ready: " + (waitingForLLMDecision ? "Yes" : "No"), 10, 140);
+    ctx.fillText("LLM Request: " + (awaitingLLMResponse ? "Busy" : "Idle"), 10, 160);
+  }
 
 function gameLoop() {
     const step = async () => {
         if (agentMode) {
-            try {
-                const state = await getGameState();
-                state.platforms = platforms.map((p) => ({
-                    x: p.x,
-                    y: p.y,
-                    width: p.width,
-                }));
-                const action = await llmAgentDecision(state);
-                applyAction(action);
-            } catch (err) {
-                console.error("Agent decision error:", err);
+            if (!player.jumping && waitingForLLMDecision && !awaitingLLMResponse) {
+                awaitingLLMResponse = true;
+                try {
+                    const state = await getGameState();
+                    state.platforms = platforms.map((p) => ({
+                        x: p.x,
+                        y: p.y,
+                        width: p.width,
+                    }));
+                    const action = await llmAgentDecision(state);
+                    applyAction(action);
+                } catch (err) {
+                    console.error("Agent decision error:", err);
+                } finally {
+                    awaitingLLMResponse = false;
+                }
             }
         } else {
             if (keys["ArrowLeft"]) player.velX = -3;
