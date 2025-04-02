@@ -57,14 +57,22 @@ function restartGame() {
 
 async function getGameState() {
     return {
-        player: { ...player },
-        gravity: gravity,
-        platforms: platforms,
-        level: currentLevel,
+      player: {
+        x: player.x,
+        y: player.y,
+        velX: player.velX,
+        velY: player.velY,
+        jumping: player.jumping,
+      },
+      gravity: gravity,
+      platforms: platforms.map(p => ({ x: p.x, y: p.y, width: p.width })),
+      level: currentLevel,
     };
-}
+  }
 
-function applyAction(action) {
+  function applyAction(actionObj) {
+    const { action, jumpPower } = actionObj;
+   console.log("Action from LLM:", action);
     switch (action) {
       case "moveRight":
         player.velX = 3;
@@ -75,14 +83,14 @@ function applyAction(action) {
       case "jump":
         if (!player.jumping) {
           player.jumping = true;
-          player.velY = -10;
+          player.velY = -jumpPower;
           waitingForLLMDecision = false;
         }
         break;
       case "jumpRight":
         if (!player.jumping) {
           player.jumping = true;
-          player.velY = -10;
+          player.velY = -jumpPower;
           player.velX = 3;
           waitingForLLMDecision = false;
         }
@@ -90,7 +98,7 @@ function applyAction(action) {
       case "jumpLeft":
         if (!player.jumping) {
           player.jumping = true;
-          player.velY = -10;
+          player.velY = -jumpPower;
           player.velX = -3;
           waitingForLLMDecision = false;
         }
@@ -114,7 +122,10 @@ async function llmAgentDecision(state) {
             body: JSON.stringify(state),
         });
         const data = await response.json();
-        return data.action || "noop";
+        return {
+            action: data.action || "noop",
+            jumpPower: typeof data.jumpPower === "number" ? data.jumpPower : 10
+          };
     } catch (err) {
         console.error("LLM API Error:", err);
         return "noop";
@@ -128,21 +139,33 @@ function physicsAndRender() {
     player.velX *= 0.9;
 
     for (let p of platforms) {
-      if (
-        player.x < p.x + p.width &&
-        player.x + player.width > p.x &&
-        player.y + player.height > p.y &&
-        player.y + player.height < p.y + platformHeight + player.velY
-      ) {
-        player.y = p.y - player.height;
-        player.velY = 0;
-        if (player.jumping) {
-          player.jumping = false;
-          waitingForLLMDecision = true;
+        // Landing on top of platform
+        if (
+          player.x < p.x + p.width &&
+          player.x + player.width > p.x &&
+          player.y + player.height > p.y &&
+          player.y + player.height < p.y + platformHeight + player.velY
+        ) {
+          player.y = p.y - player.height;
+          player.velY = 0;
+          if (player.jumping) {
+            player.jumping = false;
+            waitingForLLMDecision = true;
+          }
         }
-      }
+      
+        // Hitting bottom of platform
+        if (
+          player.x < p.x + p.width &&
+          player.x + player.width > p.x &&
+          player.y > p.y + platformHeight &&
+          player.y < p.y + platformHeight + Math.abs(player.velY) &&
+          player.velY < 0
+        ) {
+          player.y = p.y + platformHeight;
+          player.velY = 0;
+        }
     }
-
     if (player.x < 0) player.x = 0;
     if (player.x + player.width > canvas.width)
       player.x = canvas.width - player.width;
