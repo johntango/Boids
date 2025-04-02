@@ -12,6 +12,15 @@ app.use(bodyParser.json());
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
+// serve up the web page from public directory
+app.use(express.static('public'));
+
+// Endpoint to receive game state and return action
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+}
+);
 
 app.post('/decide', async (req, res) => {
   const state = req.body;

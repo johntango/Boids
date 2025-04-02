@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gravity Jumper</title>
+    <style>
+      canvas {
+        background: #111;
+        display: block;
+        margin: 0 auto;
+        border: 2px solid white;
+      }
+      body {
+        color: white;
+        text-align: center;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="script.js"></script>
+    <h1>Gravity Jumper</h1>
+    <p>Press <strong>A</strong> to toggle LLM Agent Mode</p>
+    <p>Level: <span id="level">1</span> | Score: <span id="score">0</span></p>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <p><button onclick="restartGame()">Restart</button></p>
+    
+  </body>
+</html>
