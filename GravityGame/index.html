@@ -78,7 +78,7 @@
         document.getElementById("score").textContent = 0;
       }
 
-      function getGameState() {
+      async function getGameState() {
         return {
           player: {
             x: player.x,
@@ -93,18 +93,6 @@
         };
       }
 
-      function llmAgentDecision(state) {
-        // Placeholder LLM logic: replace this with API call to actual model
-        let p = state.player;
-        if (!p.jumping && p.x < 500 && state.level < 4) {
-          return "jump";
-        } else if (p.x < 580) {
-          return "moveRight";
-        } else {
-          return "noop";
-        }
-      }
-
       function applyAction(action) {
         if (action === "moveRight") player.velX = 3;
         if (action === "moveLeft") player.velX = -3;
@@ -114,12 +102,22 @@
         }
       }
 
-      function gameLoop() {
+      async function gameLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (agentMode) {
           const state = getGameState();
-          llmAgentDecision(state).then((action) => applyAction(action));
+          try {
+            state.platforms = platforms.map((p) => ({
+              x: p.x,
+              y: p.y,
+              width: p.width,
+            }));
+            let action = await llmAgentDecision(state);
+            applyAction(action);
+          } catch (err) {
+            console.error("Error in state preparation:", err);
+          }
         } else {
           if (keys["ArrowLeft"]) player.velX = -3;
           if (keys["ArrowRight"]) player.velX = 3;
